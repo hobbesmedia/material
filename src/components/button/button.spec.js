@@ -23,12 +23,32 @@ describe('md-button', function() {
     $rootScope.$apply();
     expect($log.warn).toHaveBeenCalled();
 
-    $log.warn.reset();
+    $log.warn.calls.reset();
     button = $compile('<md-button aria-label="something"><md-icon></md-icon></md-button>')($rootScope);
     $rootScope.$apply();
     expect($log.warn).not.toHaveBeenCalled();
   }));
 
+  it('should allow attribute directive syntax', inject(function($compile, $rootScope) {
+    var button = $compile('<a md-button href="https://google.com">google</a>')($rootScope.$new());
+    expect(button.hasClass('md-button')).toBe(true);
+  }));
+
+  it('should not set focus state on mousedown', inject(function ($compile, $rootScope){
+    var button = $compile('<md-button>')($rootScope.$new());
+    $rootScope.$apply();
+    button.triggerHandler('mousedown');
+    expect(button[0]).not.toHaveClass('focus');
+  }));
+
+  it('should set focus state on focus and remove on blur', inject(function ($compile, $rootScope){
+    var button = $compile('<md-button>')($rootScope.$new());
+    $rootScope.$apply();
+    button.triggerHandler('focus');
+    expect(button[0]).toHaveClass('focus');
+    button.triggerHandler('blur');
+    expect(button[0]).not.toHaveClass('focus');
+  }));
 
   describe('with href or ng-href', function() {
 
@@ -40,6 +60,12 @@ describe('md-button', function() {
 
     it('should be anchor if ng-href attr', inject(function($compile, $rootScope) {
       var button = $compile('<md-button ng-href="/link">')($rootScope.$new());
+      $rootScope.$apply();
+      expect(button[0].tagName.toLowerCase()).toEqual('a');
+    }));
+
+    it('should be anchor if ui-sref attr', inject(function($compile, $rootScope) {
+      var button = $compile('<md-button ui-sref="state">')($rootScope.$new());
       $rootScope.$apply();
       expect(button[0].tagName.toLowerCase()).toEqual('a');
     }));

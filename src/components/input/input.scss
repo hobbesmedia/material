@@ -19,8 +19,19 @@ md-input-container {
   display: flex;
   position: relative;
   flex-direction: column;
+
+  overflow-x: hidden;
   padding: $input-container-padding;
   padding-bottom: $input-container-padding + $input-error-height;
+
+  > md-icon {
+    position: absolute;
+    top: 5px;
+    left: 2px;
+    + input {
+      margin-left: 28px * 2;
+    }
+  }
 
   textarea,
   input[type="text"],
@@ -46,18 +57,25 @@ md-input-container {
     overflow: hidden;
   }
 
+  textarea.md-input {
+    min-height: 2 * $input-line-height + $input-border-width-focused + $input-padding-top;
+    -ms-flex-preferred-size: auto; //IE fix
+  }
+
+
   label:not(.md-no-float),
-  .md-placeholder {
+  .md-placeholder:not(.md-select-label) {
     order: 1;
     pointer-events: none;
     -webkit-font-smoothing: antialiased;
     padding-left: $input-container-padding;
     z-index: 1;
     transform: translate3d(0, $input-label-default-offset, 0) scale($input-label-default-scale);
-    transform-origin: left top;
     transition: transform $swift-ease-out-timing-function 0.25s;
+
+    @include bidi-style(transform-origin, left top, transform-origin, right top);
   }
-  .md-placeholder {
+  .md-placeholder:not(.md-select-label) {
     position: absolute;
     top: 0;
     opacity: 0;
@@ -74,11 +92,16 @@ md-input-container {
     opacity: 0;
   }
 
+  &:not( .md-input-has-value ) input:not( :focus ) {
+    color: transparent;
+  }
+
+
   /*
    * The .md-input class is added to the input/textarea
    */
   .md-input {
-    flex: 1;
+    flex: 1 1 auto;
     order: 2;
     display: block;
 
@@ -160,5 +183,12 @@ md-input-container {
       background-size: 3px 1px;
       background-repeat: repeat-x;
     }
+  }
+}
+
+
+@media screen and (-ms-high-contrast: active) {
+  md-input-container.md-default-theme > md-icon {
+    fill: #fff;
   }
 }

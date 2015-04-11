@@ -201,6 +201,9 @@
      if ( !config[setName] ) {
        config[setName] = new ConfigurationItem(url, iconSize );
      }
+
+     config[setName].iconSize = iconSize || config.defaultIconSize;
+
      return this;
    },
 
@@ -209,7 +212,45 @@
      return this;
    },
 
+   preloadIcons: function ($templateCache) {
+     var iconProvider = this;
+     var svgRegistry = [
+       {
+         id : 'tabs-arrow',
+         url: 'tabs-arrow.svg',
+         svg: '<svg version="1.1" x="0px" y="0px" viewBox="0 0 24 24"><g><polygon points="15.4,7.4 14,6 8,12 14,18 15.4,16.6 10.8,12 "/></g></svg>'
+       },
+       {
+         id : 'close',
+         url: 'close.svg',
+         svg: '<svg version="1.1" x="0px" y="0px" viewBox="0 0 24 24"><g><path d="M19 6.41l-1.41-1.41-5.59 5.59-5.59-5.59-1.41 1.41 5.59 5.59-5.59 5.59 1.41 1.41 5.59-5.59 5.59 5.59 1.41-1.41-5.59-5.59z"/></g></svg>'
+       },
+       {
+         id:  'cancel',
+         url: 'cancel.svg',
+         svg: '<svg version="1.1" x="0px" y="0px" viewBox="0 0 24 24"><g><path d="M12 2c-5.53 0-10 4.47-10 10s4.47 10 10 10 10-4.47 10-10-4.47-10-10-10zm5 13.59l-1.41 1.41-3.59-3.59-3.59 3.59-1.41-1.41 3.59-3.59-3.59-3.59 1.41-1.41 3.59 3.59 3.59-3.59 1.41 1.41-3.59 3.59 3.59 3.59z"/></g></svg>'
+       },
+       {
+         id:  'menu',
+         url: 'menu.svg',
+         svg: '<svg version="1.1" x="0px" y="0px" viewBox="0 0 100 100"><path d="M 50 0 L 100 14 L 92 80 L 50 100 L 8 80 L 0 14 Z" fill="#b2b2b2"></path><path d="M 50 5 L 6 18 L 13.5 77 L 50 94 Z" fill="#E42939"></path><path d="M 50 5 L 94 18 L 86.5 77 L 50 94 Z" fill="#B72833"></path><path d="M 50 7 L 83 75 L 72 75 L 65 59 L 50 59 L 50 50 L 61 50 L 50 26 Z" fill="#b2b2b2"></path><path d="M 50 7 L 17 75 L 28 75 L 35 59 L 50 59 L 50 50 L 39 50 L 50 26 Z" fill="#fff"></path></svg>'
+       },
+       {
+         id:  'toggle-arrow',
+         url: 'toggle-arrow-svg',
+         svg: '<svg version="1.1" x="0px" y="0px" viewBox="0 0 48 48"><path d="M24 16l-12 12 2.83 2.83 9.17-9.17 9.17 9.17 2.83-2.83z"/><path d="M0 0h48v48h-48z" fill="none"/></svg>'
+       }
+     ];
+
+     svgRegistry.forEach(function(asset){
+       iconProvider.icon(asset.id,  asset.url);
+       $templateCache.put(asset.url, asset.svg);
+     });
+
+   },
+
    $get : ['$http', '$q', '$log', '$templateCache', function($http, $q, $log, $templateCache) {
+     this.preloadIcons($templateCache);
      return new MdIconService(config, $http, $q, $log, $templateCache);
    }]
  };
@@ -267,6 +308,8 @@
    var iconCache = {};
    var urlRegex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/i;
 
+   Icon.prototype = { clone : cloneSVG, prepare: prepareAndStyle };
+
    return function getIcon(id) {
      id = id || '';
 
@@ -279,6 +322,7 @@
 
      return loadByID(id)
          .catch(loadFromIconSet)
+         .catch(announceIdNotFound)
          .catch(announceNotFound)
          .then( cacheIcon(id) );
    };
@@ -289,14 +333,9 @@
    function cacheIcon( id ) {
 
      return function updateCache( icon ) {
-       var iconConfig = config[id];
+       iconCache[id] = isIcon(icon) ? icon : new Icon(icon, config[id]);
 
-       icon = !isIcon(icon) ? new Icon(icon, iconConfig) : icon;
-       icon = prepareAndStyle(icon);
-
-       iconCache[id] = icon;
-
-       return icon.clone();
+       return iconCache[id].clone();
      };
    }
 
@@ -314,7 +353,8 @@
    }
 
    /**
-    *
+    *    Loads the file as XML and uses querySelector( <id> ) to find
+    *    the desired node...
     */
    function loadFromIconSet(id) {
      var setName = id.substring(0, id.lastIndexOf(':')) || '$default';
@@ -330,27 +370,6 @@
    }
 
    /**
-    *  Prepare the DOM element that will be cached in the
-    *  loaded iconCache store.
-    */
-   function prepareAndStyle(icon) {
-     var iconSize = icon.config ? icon.config.iconSize : config.defaultIconSize;
-     var svg = angular.element(icon.element);
-
-     return svg.attr({
-       'fit'   : '',
-       'height': '100%',
-       'width' : '100%',
-       'preserveAspectRatio': 'xMidYMid meet',
-       'viewBox' : svg.attr('viewBox') || ('0 0 ' + iconSize + ' ' + iconSize)
-     })
-     .css( {
-       'pointer-events' : 'none',
-       'display' : 'block'
-     });
-   }
-
-   /**
     * Load the icon by URL (may use the $templateCache).
     * Extract the data for later conversion to Icon
     */
@@ -358,13 +377,7 @@
      return $http
        .get(url, { cache: $templateCache })
        .then(function(response) {
-         var els = angular.element(response.data);
-         // Iterate to find first svg node, allowing for comments in loaded SVG (common with auto-generated SVGs)
-         for (var i = 0; i < els.length; ++i) {
-           if (els[i].nodeName == 'svg') {
-             return els[i];
-           }
-         }
+         return angular.element('<div>').append(response.data).find('svg')[0];
        });
    }
 
@@ -372,12 +385,26 @@
     * User did not specify a URL and the ID has not been registered with the $mdIcon
     * registry
     */
-   function announceNotFound(id) {
-     var msg = 'icon ' + id + ' not found';
-     $log.warn(msg);
-     throw new Error(msg);
+   function announceIdNotFound(id) {
+     var msg;
+
+     if (angular.isString(id)) {
+       msg = 'icon ' + id + ' not found';
+       $log.warn(msg);
+     }
+
+     return $q.reject(msg || id);
    }
 
+   /**
+    * Catch HTTP or generic errors not related to incorrect icon IDs.
+    */
+   function announceNotFound(err) {
+     var msg = angular.isString(err) ? err : (err.message || err.data || err.statusText);
+     $log.warn(msg);
+
+     return $q.reject(msg);
+   }
 
    /**
     * Check target signature to see if it is an Icon instance.
@@ -385,7 +412,6 @@
    function isIcon(target) {
      return angular.isDefined(target.element) && angular.isDefined(target.config);
    }
-
 
    /**
     *  Define the Icon class
@@ -395,15 +421,47 @@
        el = angular.element('<svg xmlns="http://www.w3.org/2000/svg">').append(el)[0];
      }
 
+     // Inject the namespace if not available...
+     if ( !el.getAttribute('xmlns') ) {
+       el.setAttribute('xmlns', "http://www.w3.org/2000/svg");
+     }
+
      this.element = el;
      this.config = config;
+     this.prepare();
    }
 
-   // Clone the Icon DOM element; which is stored as an angular.element()
+   /**
+    *  Prepare the DOM element that will be cached in the
+    *  loaded iconCache store.
+    */
+   function prepareAndStyle() {
+     var iconSize = this.config ? this.config.iconSize : config.defaultIconSize;
+         angular.forEach({
+           'fit'   : '',
+           'height': '100%',
+           'width' : '100%',
+           'preserveAspectRatio': 'xMidYMid meet',
+           'viewBox' : this.element.getAttribute('viewBox') || ('0 0 ' + iconSize + ' ' + iconSize)
+         }, function(val, attr) {
+           this.element.setAttribute(attr, val);
+         }, this);
 
-   Icon.prototype.clone = function (){
-    return this.element.cloneNode(true)[0];
-   };
+         angular.forEach({
+           'pointer-events' : 'none',
+           'display' : 'block'
+         }, function(val, style) {
+           this.element.style[style] = val;
+         }, this);
+   }
+
+   /**
+    * Clone the Icon DOM element.
+    */
+   function cloneSVG(){
+     return this.element.cloneNode(true);
+   }
+
  }
 
 })();

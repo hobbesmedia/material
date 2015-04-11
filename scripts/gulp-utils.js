@@ -173,13 +173,19 @@ exports.addClosurePrefixes = function() {
     var moduleInfo = getModuleInfo(file.contents);
     if (moduleInfo.module) {
 
-      var provide = 'goog.provide(\'' + moduleNameToClosureName(moduleInfo.module) + '\');';
+      var closureModuleName = moduleNameToClosureName(moduleInfo.module);
+      var provide = 'goog.provide(\'' + closureModuleName + '\');';
       var requires = (moduleInfo.dependencies || []).sort().map(function(dep) {
         return dep.indexOf(moduleInfo.module) === 0 ? '' : 'goog.require(\'' + moduleNameToClosureName(dep) + '\');';
       }).join('\n');
+      
+      var contents = file.contents.toString();
+
+      // Assign the module to the provided Closure namespace:
+      contents = contents.replace('angular.module', closureModuleName + ' = angular.module');
 
       file.contents = new Buffer(
-        provide + '\n' + requires + '\n' + file.contents.toString()
+        provide + '\n' + requires + '\n' + contents
       );
     }
     this.push(file);
@@ -246,7 +252,7 @@ exports.hoistScssVariables = function() {
 exports.cssToNgConstant = function(ngModule, factoryName) {
   return through2.obj(function(file, enc, next) {
 
-    var template = 'angular.module("%1").constant("%2", "%3");';
+    var template = '(function(){ \n angular.module("%1").constant("%2", "%3"); \n})();';
     var output = file.contents.toString().replace(/\n/g, '')
       .replace(/\"/,'\\"');
 

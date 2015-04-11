@@ -6,10 +6,18 @@ md-input-container.md-THEME_NAME-theme {
     text-shadow: '{{foreground-shadow}}';
   }
 
+  > md-icon {
+    color: '{{foreground-1}}';
+  }
+
   label,
   .md-placeholder {
     text-shadow: '{{foreground-shadow}}';
     color: '{{foreground-3}}';
+  }
+
+  div[ng-messages] {
+    color: '{{warn-500}}'
   }
 
 
@@ -24,6 +32,9 @@ md-input-container.md-THEME_NAME-theme {
         border-color: '{{primary-500}}';
       }
       label {
+        color: '{{primary-500}}';
+      }
+      md-icon {
         color: '{{primary-500}}';
       }
       &.md-accent {
@@ -48,7 +59,7 @@ md-input-container.md-THEME_NAME-theme {
     .md-input {
       border-color: '{{warn-500}}';
     }
-    label {
+    &.md-input-focused label {
       color: '{{warn-500}}';
     }
     ng-message, data-ng-message, x-ng-message,

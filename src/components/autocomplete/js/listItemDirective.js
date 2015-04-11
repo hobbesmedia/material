@@ -6,17 +6,21 @@
 
   function MdAutocompleteListItem ($compile, $mdUtil) {
     return {
-      require: '^?mdAutocomplete',
       terminal: true,
-      link: link,
+      link: postLink,
       scope: false
     };
-    function link (scope, element, attr, ctrl) {
-      var newScope = ctrl.parent.$new(false, ctrl.parent);
-      var itemName = ctrl.scope.$eval(attr.mdAutocompleteListItem);
+    function postLink (scope, element, attr) {
+      var ctrl     = scope.$parent.$mdAutocompleteCtrl,
+          newScope = ctrl.parent.$new(false, ctrl.parent),
+          itemName = ctrl.scope.$eval(attr.mdAutocompleteListItem);
       newScope[itemName] = scope.item;
+      element.html(ctrl.scope.$eval(attr.mdAutocompleteListItemTemplate));
       $compile(element.contents())(newScope);
-      element.attr({ 'role': 'option', 'id': 'item_' + $mdUtil.nextUid() });
+      element.attr({
+        role: 'option',
+        id: 'item_' + $mdUtil.nextUid()
+      });
     }
   }
 })();

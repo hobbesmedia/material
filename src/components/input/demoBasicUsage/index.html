@@ -1,6 +1,6 @@
 <div ng-app="inputBasicDemo" ng-controller="DemoCtrl" layout="column">
 
-  <md-content md-theme="docs-dark" class="md-padding" layout="row" layout-sm="column" style="font-size:1.2em">
+  <md-content md-theme="docs-dark" layout-padding layout="row" layout-sm="column">
     <md-input-container>
       <label>Title</label>
       <input ng-model="user.title">
@@ -11,14 +11,21 @@
     </md-input-container>
   </md-content>
 
-  <md-content class="md-padding">
+  <md-content layout-padding>
     <form name="userForm">
 
-      <md-input-container flex>
-        <label>Company (Disabled)</label>
-        <input ng-model="user.company" disabled>
-      </md-input-container>
-    
+      <div layout layout-sm="column">
+        <md-input-container style="width:80%">
+            <label>Company (Disabled)</label>
+            <input ng-model="user.company" disabled>
+          </md-input-container>
+
+        <md-input-container flex>
+          <label>Submission Date</label>
+          <input type="date" ng-model="user.submissionDate">
+        </md-input-container>
+      </div>
+
       <div layout layout-sm="column">
         <md-input-container flex>
           <label>First Name</label>
@@ -54,6 +61,7 @@
         <label>Biography</label>
         <textarea ng-model="user.biography" columns="1" md-maxlength="150"></textarea>
       </md-input-container>
+
 
     </form>
   </md-content>

@@ -42,6 +42,10 @@ md-dialog {
     &:not([layout=row]) > *:first-child:not(.md-subheader) {
       margin-top: 0px;
     }
+
+    &:focus {
+      outline: none;
+    }
   }
 
   .md-actions {
@@ -55,10 +59,17 @@ md-dialog {
 
     > * {
       margin-left: 8px;
+      margin-right: 0;
     }
   }
   &.md-content-overflow .md-actions {
     border-top: 1px solid;
   }
 
+}
+
+@media screen and (-ms-high-contrast: active) {
+  md-dialog {
+    border: 1px solid #fff;
+  }
 }

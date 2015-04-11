@@ -39,20 +39,29 @@ angular.module('material.components.button', [
  * @usage
  * <hljs lang="html">
  *  <md-button>
- *    Button
+ *    Flat Button
  *  </md-button>
- *  <md-button href="http://google.com" class="md-button-colored">
- *    I'm a link
+ *  <md-button href="http://google.com">
+ *    Flat link
  *  </md-button>
- *  <md-button ng-disabled="true" class="md-colored">
- *    I'm a disabled button
+ *  <md-button class="md-raised">
+ *    Raised Button
+ *  </md-button>
+ *  <md-button ng-disabled="true">
+ *    Disabled Button
+ *  </md-button>
+ *  <md-button class="md-fab" aria-label="FAB">
+ *    <md-icon md-svg-src="your/icon.svg"></md-icon>
+ *  </md-button>
+ *  <md-button class="md-fab md-mini" aria-label="Mini FAB">
+ *    <md-icon md-svg-src="your/icon.svg"></md-icon>
  *  </md-button>
  * </hljs>
  */
-function MdButtonDirective($mdInkRipple, $mdTheming, $mdAria) {
+function MdButtonDirective($mdInkRipple, $mdTheming, $mdAria, $timeout) {
 
   return {
-    restrict: 'E',
+    restrict: 'EA',
     replace: true,
     transclude: true,
     template: getTemplate,
@@ -60,7 +69,7 @@ function MdButtonDirective($mdInkRipple, $mdTheming, $mdAria) {
   };
 
   function isAnchor(attr) {
-    return angular.isDefined(attr.href) || angular.isDefined(attr.ngHref);
+    return angular.isDefined(attr.href) || angular.isDefined(attr.ngHref) || angular.isDefined(attr.uiSref);
   }
   
   function getTemplate(element, attr) {
@@ -86,6 +95,20 @@ function MdButtonDirective($mdInkRipple, $mdTheming, $mdAria) {
         element.attr('tabindex', isDisabled ? -1 : 0);
       });
     }
+
+    // restrict focus styles to the keyboard
+    scope.mouseActive = false;
+    element
+      .on('mousedown', function() {
+        scope.mouseActive = true;
+        $timeout(function(){
+          scope.mouseActive = false;
+        }, 100);
+      })
+      .on('focus', function() {
+        if(scope.mouseActive === false) element.addClass('focus');
+      })
+      .on('blur', function() { element.removeClass('focus'); });
   }
 
 }
